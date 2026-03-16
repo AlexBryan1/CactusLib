@@ -1,5 +1,9 @@
 # 6 - Lateral Motion
 
+```{tip}
+View the [example project](https://github.com/LemLib/LemLib/blob/stable/src/main.cpp) if you need more context for setup
+```
+
 In most autons, you don't just want to spin the chassis in circles, you also want to move across the field. LemLib provides two PID based motions designed to do exactly this: `moveToPoint` and `moveToPose`. Both of these motions use both the angular and lateral PID controllers under the hood, meaning both will need to be tuned.
 
 ## Move To Point
@@ -58,7 +62,7 @@ Here's a diagram of what that motion looks like:
 :width: 600
 ```
 
-Like the other motions, `moveToPose` takes optional `params` and `async` arguments. However, `MoveToPoseParams` has a little more going on, so it's worth discussing in a little more detail.
+Like the other motions, `moveToPose` takes optional `params` and `async` arguments. However, `MoveToPoseParams` has a little more going on, so its worth discussing in a little more detail.
 
 In particular, the `lead` and `horizontalDrift` members are specific to the boomerang algorithm.
 

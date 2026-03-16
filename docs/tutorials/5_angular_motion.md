@@ -1,5 +1,9 @@
 # 5 - Angular Motions
 
+```{tip}
+View the [example project](https://github.com/LemLib/LemLib/blob/stable/src/main.cpp) if you need more context for setup
+```
+
 Turning motions are the simplest motions LemLib can perform. All of the motions will rotate the robot in some way, and only use the angular PID controller.
 
 ## Turn To Heading
@@ -29,7 +33,7 @@ Here's an example of the same function call from above, but with all of the defa
 chassis.turnToHeading(
     270,
     4000,
-    {.maxSpeed = 127}, // will never exceed 127
+    {.maxSpeed = 120}, // will never exceed 120
     true // this motion will not block execution
 ); 
 ```
@@ -50,7 +54,7 @@ Here's an example of how you'd use it:
 
 ```cpp
 // turn to the point (53, 53) with a timeout of 1000 ms
-chassis.turnTo(53, 53, 1000);
+chassis.turnToPoint(53, 53, 1000);
 ```
 
 Similar to `turnToHeading`, the motion also takes two optional arguments, `params` and `async`. 
@@ -66,7 +70,7 @@ Swing motions are unique in that they only use half the drivetrain to move.
 Here's an example of how you'd use a swing turn:
 
 ```cpp
-chassis.setPose(0,0,0); // the robot now thinks that it's at (0,0) with heading of 0 degrees
+chassis.setPose(0,0,0); // the robot now things that its at (0,0) with heading of 0 degrees
 chassis.swingToHeading(45, 4000); // swing to face 45 degrees, with a timeout of 4000 ms
 ```
 

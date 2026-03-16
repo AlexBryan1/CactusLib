@@ -1,5 +1,9 @@
 # 4 - PID Tuning
 
+```{tip}
+View the [example project](https://github.com/LemLib/LemLib/blob/stable/src/main.cpp) if you need more context for setup
+```
+
 ## Introduction
 
 PIDs are used in the majority of motion algorithms in LemLib. There are 2 PID Controllers used by LemLib: one for lateral motion, and one for angular motion. This tutorial will focus on tuning those PIDs.
@@ -246,7 +250,7 @@ The main timeout is used in case something unexpected happens, like when the rob
 
 The other 2 timeouts are used when the robot is close to the target. There is a longer timeout and a shorter timeout. For example: 
 
- * if the robot is within 5 inches of the target for 500ms, exit
+ * if the robot is within 3 inches of the target for 500ms, exit
  * if the robot is within 1 inch of the target for 100ms, exit
 
 These exit conditions are tuned in the PID settings constructor. See the code example below: 
