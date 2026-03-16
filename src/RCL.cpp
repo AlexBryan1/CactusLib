@@ -1,3 +1,5 @@
+#include "RCL.hpp"
+
 /*
 Overview:
 This file will contain the RCL class, which will implement the RCL algorithm as follows:
@@ -37,6 +39,49 @@ We will have a RCL class, with the following methods:
 * dynamicUpdate() - this will be called every loop, and will perform the RCL algorithm
 * staticUpdate(int samples) - A function for getting non-moving distance sensor updates, will take samples number of readings, and will average them to get a more accurate reading
 * isValid() - this will check if the reading of the distance sensors is valid
+* getPosition() - this will return the RCL adjusted position of the robot
 
 */
 
+class RCL {
+    public:
+        RCL(SENSORS sensors, std::vector<std::pair<Coordinate, Coordinate>> obstacles);
+        SENSORS sensors;
+        Pose dynamicUpdate(Pose pose){
+            return pose;
+        }
+        Pose staticUpdate(int samples, Pose currentPos, usage usage){
+            readings avgReadings;
+            for(int i = 0; i < samples; i++){
+                // get readings from distance sensors, and average them
+                if(usage.frontUsing){
+                    avgReadings.front += sensors.front->get()/samples;
+                }
+                if(usage.backUsing){
+                    avgReadings.back += sensors.back->get()/samples;
+                }
+                if(usage.leftUsing){
+                    avgReadings.left += sensors.left->get()/samples;
+                }
+                if(usage.rightUsing){
+                    avgReadings.right += sensors.right->get()/samples;
+                }
+            }
+            return Pose{Coordinate{0,0}, 0}; // placeholder
+        }
+        bool isValid();
+        Coordinate getPosition();
+
+    private:
+        pros::Distance* front;
+        pros::Distance* back;
+        pros::Distance* left;
+        pros::Distance* right;
+        pros::IMU* imu;
+        std::vector<std::pair<Coordinate, Coordinate>> obstacles;
+        Coordinate position;
+
+
+
+
+    };
