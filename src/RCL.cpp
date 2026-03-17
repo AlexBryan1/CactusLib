@@ -96,12 +96,23 @@ Pose staticUpdate(int samples, Pose currentPos, DistanceConfig usage) {
     //Now we have the distance from the wall, we need to apply the offset, and convert to inches, and apply + or -
             if(usage.x != NONE){
                 newPose.pos.x += usage.Xoffset;
+                newPose.pos.x *= 0.0393701; // Convert from mm to inches
             }
             if(usage.y != NONE){
                 newPose.pos.y += usage.Yoffset;
+                newPose.pos.y *= 0.0393701; // Convert from mm to inches
             }
-            return newPose;
-    return newPose;
+
+    Pose AdjustedPose = newPose;
+    if (usage.y != NONE){
+        if (std::fmod(((std::round(((newPose.angle)+usage.y)/90)) + 180), 360) - 180 == FRONT){
+            AdjustedPose.pos.y = -newPose.pos.y;
+        }
+        if (std::fmod(((std::round(((newPose.angle)+usage.x)/90)) + 180), 360) - 180 == RIGHT){
+            AdjustedPose.pos.x = -newPose.pos.x;
+        }
+    }
+    return AdjustedPose;
 }
         bool isValid();
         Coordinate getPosition();

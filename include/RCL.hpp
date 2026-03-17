@@ -47,8 +47,8 @@ struct DistanceConfig{
 
 enum direction{
     FRONT,
+    RIGHT,
     BACK,
     LEFT,
-    RIGHT,
     NONE
 };
