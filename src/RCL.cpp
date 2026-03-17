@@ -1,4 +1,5 @@
 #include "RCL.hpp"
+#include <cmath>
 
 /*
 Overview:
@@ -50,24 +51,60 @@ class RCL {
         Pose dynamicUpdate(Pose pose){
             return pose;
         }
-        Pose staticUpdate(int samples, Pose currentPos, usage usage){
+        Pose staticUpdate(int samples, Pose currentPos, DirectionsXY usage){
             readings avgReadings;
+            Pose newPose = currentPos;
             for(int i = 0; i < samples; i++){
                 // get readings from distance sensors, and average them
-                if(usage.frontUsing){
+                if(usage.x == FRONT || usage.y == FRONT){
                     avgReadings.front += sensors.front->get()/samples;
                 }
-                if(usage.backUsing){
+                if(usage.x == BACK || usage.y == BACK){
                     avgReadings.back += sensors.back->get()/samples;
                 }
-                if(usage.leftUsing){
+                if(usage.x == LEFT || usage.y == LEFT){
                     avgReadings.left += sensors.left->get()/samples;
                 }
-                if(usage.rightUsing){
+                if(usage.x == RIGHT || usage.y == RIGHT){
                     avgReadings.right += sensors.right->get()/samples;
                 }
+                newPose.angle += sensors.imu->get_heading()/samples;
             }
-            return Pose{Coordinate{0,0}, 0}; // placeholder
+            
+            newPose.angle = std::fmod((newPose.angle + 180), 360) - 180;
+            if(usage.x == FRONT){
+                double refrenceAngle = std::round(newPose.angle/90)*90;
+                newPose.pos.x = std::cos(newPose.angle - refrenceAngle) * avgReadings.front;
+            }else if (usage.x == BACK){
+                double tempAngle = newPose.angle + 180;
+                double refrenceAngle = std::round(tempAngle/90)*90;
+                newPose.pos.x = std::cos(tempAngle - refrenceAngle) * avgReadings.back;
+            }else if (usage.x == RIGHT){
+                double tempAngle = newPose.angle + 90;
+                double refrenceAngle = std::round(tempAngle/90)*90;
+                newPose.pos.x = std::cos(tempAngle - refrenceAngle) * avgReadings.right;
+            }else if (usage.x == LEFT){
+                double tempAngle = newPose.angle - 90;
+                double refrenceAngle = std::round(tempAngle/90)*90;
+                newPose.pos.x = std::cos(tempAngle - refrenceAngle) * avgReadings.left;
+            }
+            if(usage.y == FRONT){
+                double refrenceAngle = std::round(newPose.angle/90)*90;
+                newPose.pos.y = std::sin(newPose.angle - refrenceAngle) * avgReadings.front;
+            }else if (usage.y == BACK){
+                double tempAngle = newPose.angle + 180;
+                double refrenceAngle = std::round(tempAngle/90)*90;
+                newPose.pos.y = std::sin(tempAngle - refrenceAngle) * avgReadings.back;{
+            }else if (usage.y == RIGHT){
+                double tempAngle = newPose.angle + 90;
+                double refrenceAngle = std::round(tempAngle/90)*90;
+                newPose.pos.y = std::sin(tempAngle - refrenceAngle) * avgReadings.right;
+            }else if (usage.y == LEFT){
+                double tempAngle = newPose.angle - 90;
+                double refrenceAngle = std::round(tempAngle/90)*90;
+                newPose.pos.y = std::sin(tempAngle - refrenceAngle) * avgReadings.left;
+            }
+            return newPose;
         }
         bool isValid();
         Coordinate getPosition();

@@ -33,3 +33,15 @@ struct usage{
     bool leftUsing;
     bool rightUsing;
 };
+
+struct DirectionsXY{
+    int x;
+    int y;
+};
+
+enum direction{
+    FRONT,
+    BACK,
+    LEFT,
+    RIGHT
+};
