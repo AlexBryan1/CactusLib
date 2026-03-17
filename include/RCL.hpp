@@ -38,14 +38,17 @@ struct usage{
     bool rightUsing;
 };
 
-struct DirectionsXY{
+struct DistanceConfig{
     int x;
     int y;
+    float Xoffset;
+    float Yoffset;
 };
 
 enum direction{
     FRONT,
     BACK,
     LEFT,
-    RIGHT
+    RIGHT,
+    NONE
 };
