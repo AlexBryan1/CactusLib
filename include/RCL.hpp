@@ -1,3 +1,7 @@
+#include "main.h"
+#include <vector>
+
+
 struct Coordinate {
     int x;
     int y;

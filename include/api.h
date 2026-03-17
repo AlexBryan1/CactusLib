@@ -60,7 +60,7 @@
 
 #ifdef __cplusplus
 #include "pros/adi.hpp"
-#include "pros/ai_vision.hpp"
+//#include "pros/ai_vision.hpp"
 #include "pros/colors.hpp"
 #include "pros/device.hpp"
 #include "pros/distance.hpp"

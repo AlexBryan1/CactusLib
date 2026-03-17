@@ -1,5 +1,6 @@
 #include "RCL.hpp"
 #include <cmath>
+#include <vector>
 
 /*
 Overview:
@@ -108,17 +109,4 @@ class RCL {
         }
         bool isValid();
         Coordinate getPosition();
-
-    private:
-        pros::Distance* front;
-        pros::Distance* back;
-        pros::Distance* left;
-        pros::Distance* right;
-        pros::IMU* imu;
-        std::vector<std::pair<Coordinate, Coordinate>> obstacles;
-        Coordinate position;
-
-
-
-
     };
