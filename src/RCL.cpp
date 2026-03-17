@@ -108,12 +108,12 @@ class RCL {
 
             Pose AdjustedPose = newPose;
             if (usage.y != NONE){
-                if (std::fmod(((std::round(((newPose.angle)+usage.y)/90)) + 180), 360) - 180 == FRONT){
+                if (std::fmod(((std::round(((newPose.angle)+usage.y)/90)) + 180), 360) - 180 == static_cast<int>(FRONT)){
                 AdjustedPose.pos.y = -newPose.pos.y;
                 }
             }
             if(usage.x != NONE){
-                if (std::fmod(((std::round(((newPose.angle)+usage.x)/90)) + 180), 360) - 180 == RIGHT){
+                if (std::fmod(((std::round(((newPose.angle)+usage.x)/90)) + 180), 360) - 180 == static_cast<int>(RIGHT)){
                     AdjustedPose.pos.x = -newPose.pos.x;
                 }
             }
