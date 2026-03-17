@@ -1,5 +1,6 @@
 #include "main.h"
 #include "lemlib/api.hpp" // IWYU pragma: keep
+#include "cstm_move.hpp"
 
 // controller
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
@@ -11,6 +12,10 @@ pros::MotorGroup rightMotors({6, -9, 7}, pros::MotorGearset::blue); // right mot
 
 // Inertial Sensor on port 10
 pros::Imu imu(10);
+
+
+pros::Distance distSensor(21);
+
 
 // tracking wheels
 // horizontal tracking wheel encoder. Rotation sensor, port 20, not reversed
@@ -86,6 +91,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
  */
 void initialize() {
     pros::lcd::initialize(); // initialize brain screen
+    cstm_move_init(drivetrain);
     chassis.calibrate(); // calibrate sensors
 
     // the default rate is 50. however, if you need to change the rate, you
