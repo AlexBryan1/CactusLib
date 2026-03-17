@@ -52,3 +52,12 @@ enum direction{
     LEFT,
     NONE
 };
+
+
+class RCL {
+    public:
+        RCL(SENSORS sensors, std::vector<std::pair<Coordinate, Coordinate>> obstacles);
+        SENSORS sensors;
+        Pose staticUpdate(int samples, Pose currentPos, DistanceConfig usage);
+        Pose dynamicUpdate(Pose pose);
+    };
