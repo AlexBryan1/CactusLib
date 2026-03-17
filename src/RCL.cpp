@@ -94,7 +94,7 @@ class RCL {
             }else if (usage.y == BACK){
                 double tempAngle = newPose.angle + 180;
                 double refrenceAngle = std::round(tempAngle/90)*90;
-                newPose.pos.y = std::sin(tempAngle - refrenceAngle) * avgReadings.back;{
+                newPose.pos.y = std::sin(tempAngle - refrenceAngle) * avgReadings.back;
             }else if (usage.y == RIGHT){
                 double tempAngle = newPose.angle + 90;
                 double refrenceAngle = std::round(tempAngle/90)*90;
