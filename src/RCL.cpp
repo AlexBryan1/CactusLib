@@ -47,53 +47,56 @@ We will have a RCL class, with the following methods:
 
 class RCL {
     public:
-        RCL(SENSORS sensors, std::vector<std::pair<Coordinate, Coordinate>> obstacles);
+        RCL(SENSORS sensors, std::vector<std::pair<Coordinate, Coordinate>> obstacles){
+            this->sensors = sensors;
+            this->obstacles = obstacles;
+        }
         SENSORS sensors;
+        std::vector<std::pair<Coordinate, Coordinate>> obstacles;
         Pose dynamicUpdate(Pose pose){
             return pose;
         }
-Pose staticUpdate(int samples, Pose currentPos, DistanceConfig usage) {
-    readings avgReadings = {0, 0, 0, 0};
-    Pose newPose = currentPos;
-    newPose.angle = 0; 
+        Pose staticUpdate(int samples, Pose currentPos, DistanceConfig usage) {
+            readings avgReadings = {0, 0, 0, 0};
+            Pose newPose = currentPos;
+            newPose.angle = 0; 
 
 
-    for (int i = 0; i < samples; i++) {
-        if (usage.x == FRONT || usage.y == FRONT) avgReadings.front += sensors.front->get();
-        if (usage.x == BACK  || usage.y == BACK)  avgReadings.back  += sensors.back->get();
-        if (usage.x == LEFT  || usage.y == LEFT)  avgReadings.left  += sensors.left->get();
-        if (usage.x == RIGHT || usage.y == RIGHT) avgReadings.right += sensors.right->get();
-        
-        newPose.angle += sensors.imu->get_heading();
-    }
+            for (int i = 0; i < samples; i++) {
+                if (usage.x == FRONT || usage.y == FRONT) avgReadings.front += this->sensors.front->get();
+                if (usage.x == BACK  || usage.y == BACK)  avgReadings.back  += this->sensors.back->get();
+                if (usage.x == LEFT  || usage.y == LEFT)  avgReadings.left  += this->sensors.left->get();
+                if (usage.x == RIGHT || usage.y == RIGHT) avgReadings.right += this->sensors.right->get();
+                newPose.angle += this->sensors.imu->get_heading();
+            }
 
-    avgReadings.front /= samples;
-    avgReadings.back  /= samples;
-    avgReadings.left  /= samples;
-    avgReadings.right /= samples;
-    newPose.angle     /= samples;
+            avgReadings.front /= samples;
+            avgReadings.back  /= samples;
+            avgReadings.left  /= samples;
+            avgReadings.right /= samples;
+            newPose.angle     /= samples;
 
-    // Wrap angle to (-180, 180)
-    newPose.angle = std::fmod((newPose.angle + 180), 360) - 180;
+            // Wrap angle to (-180, 180)
+            newPose.angle = std::fmod((newPose.angle + 180), 360) - 180;
 
-    // 2. Helper Lambda to calculate tilted distance
-    auto getTrueDist = [&](double angleOffset, double rawDist) {
-        double referenceAngle = std::round(angleOffset / 90) * 90;
-        // We use Cosine to get the "flat" distance to the wall
-        return std::cos((angleOffset - referenceAngle) * (M_PI / 180.0)) * rawDist;
-    };
+   
+            auto getTrueDist = [&](double angleOffset, double rawDist) {
+                double referenceAngle = std::round(angleOffset / 90) * 90;
+                // We use Cosine to get the "flat" distance to the wall
+                return std::cos((angleOffset - referenceAngle) * (M_PI / 180.0)) * rawDist;
+            };
 
-    // 3. Update X Position
-    if (usage.x == FRONT)      newPose.pos.x = getTrueDist(newPose.angle, avgReadings.front);
-    else if (usage.x == BACK)  newPose.pos.x = getTrueDist(newPose.angle + 180, avgReadings.back);
-    else if (usage.x == RIGHT) newPose.pos.x = getTrueDist(newPose.angle + 90, avgReadings.right);
-    else if (usage.x == LEFT)  newPose.pos.x = getTrueDist(newPose.angle - 90, avgReadings.left);
 
-    if (usage.y == FRONT)      newPose.pos.y = getTrueDist(newPose.angle, avgReadings.front);
-    else if (usage.y == BACK)  newPose.pos.y = getTrueDist(newPose.angle + 180, avgReadings.back);
-    else if (usage.y == RIGHT) newPose.pos.y = getTrueDist(newPose.angle + 90, avgReadings.right);
-    else if (usage.y == LEFT)  newPose.pos.y = getTrueDist(newPose.angle - 90, avgReadings.left);
-    //Now we have the distance from the wall, we need to apply the offset, and convert to inches, and apply + or -
+            if (usage.x == FRONT)      newPose.pos.x = getTrueDist(newPose.angle, avgReadings.front);
+            else if (usage.x == BACK)  newPose.pos.x = getTrueDist(newPose.angle + 180, avgReadings.back);
+            else if (usage.x == RIGHT) newPose.pos.x = getTrueDist(newPose.angle + 90, avgReadings.right);
+            else if (usage.x == LEFT)  newPose.pos.x = getTrueDist(newPose.angle - 90, avgReadings.left);
+
+            if (usage.y == FRONT)      newPose.pos.y = getTrueDist(newPose.angle, avgReadings.front);
+            else if (usage.y == BACK)  newPose.pos.y = getTrueDist(newPose.angle + 180, avgReadings.back);
+            else if (usage.y == RIGHT) newPose.pos.y = getTrueDist(newPose.angle + 90, avgReadings.right);
+            else if (usage.y == LEFT)  newPose.pos.y = getTrueDist(newPose.angle - 90, avgReadings.left);
+            //Now we have the distance from the wall, we need to apply the offset, and convert to inches, and apply + or -
             if(usage.x != NONE){
                 newPose.pos.x += usage.Xoffset;
                 newPose.pos.x *= 0.0393701; // Convert from mm to inches
@@ -103,17 +106,17 @@ Pose staticUpdate(int samples, Pose currentPos, DistanceConfig usage) {
                 newPose.pos.y *= 0.0393701; // Convert from mm to inches
             }
 
-    Pose AdjustedPose = newPose;
-    if (usage.y != NONE){
-        if (std::fmod(((std::round(((newPose.angle)+usage.y)/90)) + 180), 360) - 180 == FRONT){
-            AdjustedPose.pos.y = -newPose.pos.y;
+            Pose AdjustedPose = newPose;
+            if (usage.y != NONE){
+                if (std::fmod(((std::round(((newPose.angle)+usage.y)/90)) + 180), 360) - 180 == static_cast<int>(FRONT)){
+                AdjustedPose.pos.y = -newPose.pos.y;
+                }
+            }
+            if(usage.x != NONE){
+                if (std::fmod(((std::round(((newPose.angle)+usage.x)/90)) + 180), 360) - 180 == static_cast<int>(RIGHT)){
+                    AdjustedPose.pos.x = -newPose.pos.x;
+                }
+            }
+            return AdjustedPose;
         }
-        if (std::fmod(((std::round(((newPose.angle)+usage.x)/90)) + 180), 360) - 180 == RIGHT){
-            AdjustedPose.pos.x = -newPose.pos.x;
-        }
-    }
-    return AdjustedPose;
-}
-        bool isValid();
-        Coordinate getPosition();
-    };
+};
