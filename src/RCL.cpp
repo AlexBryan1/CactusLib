@@ -54,6 +54,30 @@ class RCL {
         SENSORS sensors;
         std::vector<std::pair<Coordinate, Coordinate>> obstacles;
         std::vector<wall> walls = {{{72,72},{72,-72},RIGHT},{{72,-72},{-72,-72},BACK},{{-72,-72},{-72,72},LEFT},{{-72,72},{72,72},FRONT}};
+        std::pair<int, double> findWall(Coordinate sensorPos, double Angle, DistanceConfig usage){
+            std::pair<int, double> rayResult = {0, 0};
+            for (auto& wall : this->walls) {
+                double A1 = wall.start.y - wall.end.y;
+                double B1 = wall.end.x - wall.start.x;
+                double C1 = wall.start.x * wall.end.y - wall.end.x * wall.start.y;
+
+                double A2 = - std::tan(Angle * M_PI / 180.0);
+                double B2 = 1;
+                double C2 = sensorPos.y - std::tan(Angle * M_PI / 180.0) * sensorPos.x;
+
+                double det = A1 * B2 - A2 * B1;
+                if (std::abs(det) < 1e-6) continue; // Lines are parallel, skip
+
+                double x = (B1 * C2 - B2 * C1) / det;
+                double y = (C1 * A2 - C2 * A1) / det;
+                if (rayResult.second == 0 || std::hypot(x - sensorPos.x, y - sensorPos.y) < rayResult.second) {
+                    rayResult = {wall.direction, std::hypot(x - sensorPos.x, y - sensorPos.y)};
+                }
+            }
+            return rayResult;
+        }
+
+
         Pose dynamicUpdate(Pose pose, DistanceConfig usage) {
             int samples = 1;
             readings avgReadings = {0, 0, 0, 0, 0};
@@ -81,8 +105,6 @@ class RCL {
             TODO:
             add filterings for bad readings and obstacles in the way
             add filterings for raycast intersections behind the sensor
-            
-            
             */
 
 
@@ -92,30 +114,8 @@ class RCL {
             Coordinate sensorPos = {
                     pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
                     pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
-                };
-            for (auto& wall : this->walls) {
-                double A1 = wall.start.y - wall.end.y;
-                double B1 = wall.end.x - wall.start.x;
-                double C1 = wall.start.x * wall.end.y - wall.end.x * wall.start.y;
-
-                Coordinate sensorPos = {
-                    pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
-                    pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
-                };
-
-                double A2 = - std::tan(tempAngle * M_PI / 180.0);
-                double B2 = 1;
-                double C2 = sensorPos.y - std::tan(tempAngle * M_PI / 180.0) * sensorPos.x;
-
-                double det = A1 * B2 - A2 * B1;
-                if (std::abs(det) < 1e-6) continue; // Lines are parallel, skip
-
-                double x = (B1 * C2 - B2 * C1) / det;
-                double y = (C1 * A2 - C2 * A1) / det;
-                if (casts.frontSensor.second == 0 || std::hypot(x - sensorPos.x, y - sensorPos.y) < casts.frontSensor.second) {
-                    casts.frontSensor = {wall.direction, std::hypot(x - sensorPos.x, y - sensorPos.y)};
-                }
-            }
+            };
+            casts.frontSensor = findWall(sensorPos, tempAngle, usage);
 
             tempAngle = pose.angle + 180;
 
@@ -123,29 +123,8 @@ class RCL {
                     pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
                     pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
                 };
-            for (auto& wall : this->walls) {
-                double A1 = wall.start.y - wall.end.y;
-                double B1 = wall.end.x - wall.start.x;
-                double C1 = wall.start.x * wall.end.y - wall.end.x * wall.start.y;
-
-                Coordinate sensorPos = {
-                    pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
-                    pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
-                };
-
-                double A2 = - std::tan(tempAngle * M_PI / 180.0);
-                double B2 = 1;
-                double C2 = sensorPos.y - std::tan(tempAngle * M_PI / 180.0) * sensorPos.x;
-
-                double det = A1 * B2 - A2 * B1;
-                if (std::abs(det) < 1e-6) continue; // Lines are parallel, skip
-
-                double x = (B1 * C2 - B2 * C1) / det;
-                double y = (C1 * A2 - C2 * A1) / det;
-                if (casts.backSensor.second == 0 || std::hypot(x - sensorPos.x, y - sensorPos.y) < casts.backSensor.second) {
-                    casts.backSensor = {wall.direction, std::hypot(x - sensorPos.x, y - sensorPos.y)};
-                }
-            }
+            
+            casts.backSensor = findWall(sensorPos, tempAngle, usage);
 
 
             tempAngle = pose.angle + 90;
@@ -153,58 +132,16 @@ class RCL {
                     pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
                     pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
                 };
-            for (auto& wall : this->walls) {
-                double A1 = wall.start.y - wall.end.y;
-                double B1 = wall.end.x - wall.start.x;
-                double C1 = wall.start.x * wall.end.y - wall.end.x * wall.start.y;
 
-                Coordinate sensorPos = {
-                    pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
-                    pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
-                };
-
-                double A2 = - std::tan(tempAngle * M_PI / 180.0);
-                double B2 = 1;
-                double C2 = sensorPos.y - std::tan(tempAngle * M_PI / 180.0) * sensorPos.x;
-
-                double det = A1 * B2 - A2 * B1;
-                if (std::abs(det) < 1e-6) continue; // Lines are parallel, skip
-
-                double x = (B1 * C2 - B2 * C1) / det;
-                double y = (C1 * A2 - C2 * A1) / det;
-                if (casts.rightSensor.second == 0 || std::hypot(x - sensorPos.x, y - sensorPos.y) < casts.rightSensor.second) {
-                    casts.rightSensor = {wall.direction, std::hypot(x - sensorPos.x, y - sensorPos.y)};
-                }
-            }
+            casts.rightSensor = findWall(sensorPos, tempAngle, usage);
 
             tempAngle = pose.angle - 90;
             Coordinate sensorPos = {
                     pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
                     pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
                 };
-            for (auto& wall : this->walls) {
-                double A1 = wall.start.y - wall.end.y;
-                double B1 = wall.end.x - wall.start.x;
-                double C1 = wall.start.x * wall.end.y - wall.end.x * wall.start.y;
-
-                Coordinate sensorPos = {
-                    pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
-                    pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
-                };
-
-                double A2 = - std::tan(tempAngle * M_PI / 180.0);
-                double B2 = 1;
-                double C2 = sensorPos.y - std::tan(tempAngle * M_PI / 180.0) * sensorPos.x;
-
-                double det = A1 * B2 - A2 * B1;
-                if (std::abs(det) < 1e-6) continue; // Lines are parallel, skip
-
-                double x = (B1 * C2 - B2 * C1) / det;
-                double y = (C1 * A2 - C2 * A1) / det;
-                if (casts.leftSensor.second == 0 || std::hypot(x - sensorPos.x, y - sensorPos.y) < casts.leftSensor.second) {
-                    casts.leftSensor = {wall.direction, std::hypot(x - sensorPos.x, y - sensorPos.y)};
-                }
-            }
+            
+            casts.leftSensor = findWall(sensorPos, tempAngle, usage);
 
             if (casts.frontSensor.second != 0) {
                 // Calculate new pose based on front sensor
