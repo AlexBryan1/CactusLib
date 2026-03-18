@@ -10,6 +10,15 @@ struct Coordinate {
 struct Pose {
     Coordinate pos;
     double angle;
+        Pose operator-(const Pose& other) const {
+            return { {pos.x - other.pos.x, pos.y - other.pos.y}, angle - other.angle };
+        }
+        Pose operator+(const Pose& other) const {
+            return { {pos.x + other.pos.x, pos.y + other.pos.y}, angle + other.angle };
+        }
+        Pose operator/(double scalar) const {
+            return { {static_cast<int>(pos.x / scalar), static_cast<int>(pos.y / scalar)}, angle / scalar};
+        }
 };
 
 struct readings {

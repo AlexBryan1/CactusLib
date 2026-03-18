@@ -47,13 +47,48 @@ We will have a RCL class, with the following methods:
 
 class RCL {
     public:
-        RCL(SENSORS sensors, std::vector<std::pair<Coordinate, Coordinate>> obstacles){
+        RCL(SENSORS sensors, std::vector<std::pair<Coordinate, Coordinate>> obstacles, DistanceConfig usage){
             this->sensors = sensors;
             this->obstacles = obstacles;
+            this->usage = usage;
         }
         SENSORS sensors;
+        DistanceConfig usage;
         std::vector<std::pair<Coordinate, Coordinate>> obstacles;
+        bool run = false;
         std::vector<wall> walls = {{{72,72},{72,-72},RIGHT},{{72,-72},{-72,-72},BACK},{{-72,-72},{-72,72},LEFT},{{-72,72},{72,72},FRONT}};
+        
+        void startTracking(Pose &robotPose){
+            this->run = true;
+            pros::Task trackingTask([this, &robotPose]() {
+                this->trackingLoop(&robotPose);
+            });
+        }
+
+
+        void trackingLoop(void* param){
+            Pose* robotPose = static_cast<Pose*>(param);
+            this->run = true;
+            while (true) {
+                if(this->run){
+                    Pose RCLPOSE = dynamicUpdate(*robotPose, this->usage);
+                    if ((RCLPOSE - *robotPose).pos.x < 5 && (RCLPOSE - *robotPose).pos.y < 5) {
+                        *robotPose = RCLPOSE;
+                    }else{
+                        *robotPose = (RCLPOSE + *robotPose)/2;
+                    }
+                }
+            }
+        }
+
+        void pauseRCLTracking(){
+            this->run = false;
+        }
+
+        void resumeRCLTracking(){
+            this->run = true;
+        }
+
         std::pair<int, double> findWall(Coordinate sensorPos, double Angle, DistanceConfig usage){
             std::pair<int, double> rayResult = {0, 0};
             for (auto& wall : this->walls) {
