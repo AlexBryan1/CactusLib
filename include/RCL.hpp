@@ -17,6 +17,7 @@ struct readings {
     double back;
     double left;
     double right;
+    double angle;
 };
 
 struct SENSORS{
@@ -31,18 +32,25 @@ struct SENSORS{
     pros::IMU* imu;
 };
 
-struct usage{
-    bool frontUsing;
-    bool backUsing;
-    bool leftUsing;
-    bool rightUsing;
-};
 
 struct DistanceConfig{
-    int x;
-    int y;
+    int xUsing;
+    int yUsing;
     float Xoffset;
     float Yoffset;
+};
+
+struct wall{
+    Coordinate start;
+    Coordinate end;
+    int direction;
+};
+
+struct Casts{
+    std::pair<int, double> frontSensor;
+    std::pair<int, double> backSensor;
+    std::pair<int, double> leftSensor;
+    std::pair<int, double> rightSensor;
 };
 
 enum direction{

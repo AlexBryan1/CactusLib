@@ -53,7 +53,199 @@ class RCL {
         }
         SENSORS sensors;
         std::vector<std::pair<Coordinate, Coordinate>> obstacles;
-        Pose dynamicUpdate(Pose pose){
+        std::vector<wall> walls = {{{72,72},{72,-72},RIGHT},{{72,-72},{-72,-72},BACK},{{-72,-72},{-72,72},LEFT},{{-72,72},{72,72},FRONT}};
+        Pose dynamicUpdate(Pose pose, DistanceConfig usage) {
+            int samples = 1;
+            readings avgReadings = {0, 0, 0, 0, 0};
+            for (int i = 0; i < samples; i++) {
+                if (this->sensors.frontUsing) avgReadings.front += this->sensors.front->get();
+                if (this->sensors.backUsing)  avgReadings.back  += this->sensors.back->get();
+                if (this->sensors.leftUsing)  avgReadings.left  += this->sensors.left->get();
+                if (this->sensors.rightUsing) avgReadings.right += this->sensors.right->get();
+                avgReadings.angle += this->sensors.imu->get_heading();
+            }
+
+            avgReadings.front /= samples;
+            avgReadings.back  /= samples;
+            avgReadings.left  /= samples;
+            avgReadings.right /= samples;
+            avgReadings.angle /= samples;
+
+            avgReadings.angle = std::fmod((avgReadings.angle + 180), 360) - 180;
+
+            /*
+            For each sensor, raycast to each wall, and find the closest wall.
+            Then for the sensors looking at the EAST - WEST walls, it will calculate the X coord
+            and the sensors looking at the NORTH - SOUTH walls will calculate the Y coord.
+            
+            TODO:
+            add filterings for bad readings and obstacles in the way
+            add filterings for raycast intersections behind the sensor
+            
+            
+            */
+
+
+            // Front
+            Casts casts = {{0,0},{0,0},{0,0},{0,0}};
+            double tempAngle = pose.angle;
+            Coordinate sensorPos = {
+                    pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
+                    pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
+                };
+            for (auto& wall : this->walls) {
+                double A1 = wall.start.y - wall.end.y;
+                double B1 = wall.end.x - wall.start.x;
+                double C1 = wall.start.x * wall.end.y - wall.end.x * wall.start.y;
+
+                Coordinate sensorPos = {
+                    pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
+                    pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
+                };
+
+                double A2 = - std::tan(tempAngle * M_PI / 180.0);
+                double B2 = 1;
+                double C2 = sensorPos.y - std::tan(tempAngle * M_PI / 180.0) * sensorPos.x;
+
+                double det = A1 * B2 - A2 * B1;
+                if (std::abs(det) < 1e-6) continue; // Lines are parallel, skip
+
+                double x = (B1 * C2 - B2 * C1) / det;
+                double y = (C1 * A2 - C2 * A1) / det;
+                if (casts.frontSensor.second == 0 || std::hypot(x - sensorPos.x, y - sensorPos.y) < casts.frontSensor.second) {
+                    casts.frontSensor = {wall.direction, std::hypot(x - sensorPos.x, y - sensorPos.y)};
+                }
+            }
+
+            tempAngle = pose.angle + 180;
+
+            Coordinate sensorPos = {
+                    pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
+                    pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
+                };
+            for (auto& wall : this->walls) {
+                double A1 = wall.start.y - wall.end.y;
+                double B1 = wall.end.x - wall.start.x;
+                double C1 = wall.start.x * wall.end.y - wall.end.x * wall.start.y;
+
+                Coordinate sensorPos = {
+                    pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
+                    pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
+                };
+
+                double A2 = - std::tan(tempAngle * M_PI / 180.0);
+                double B2 = 1;
+                double C2 = sensorPos.y - std::tan(tempAngle * M_PI / 180.0) * sensorPos.x;
+
+                double det = A1 * B2 - A2 * B1;
+                if (std::abs(det) < 1e-6) continue; // Lines are parallel, skip
+
+                double x = (B1 * C2 - B2 * C1) / det;
+                double y = (C1 * A2 - C2 * A1) / det;
+                if (casts.backSensor.second == 0 || std::hypot(x - sensorPos.x, y - sensorPos.y) < casts.backSensor.second) {
+                    casts.backSensor = {wall.direction, std::hypot(x - sensorPos.x, y - sensorPos.y)};
+                }
+            }
+
+
+            tempAngle = pose.angle + 90;
+            Coordinate sensorPos = {
+                    pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
+                    pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
+                };
+            for (auto& wall : this->walls) {
+                double A1 = wall.start.y - wall.end.y;
+                double B1 = wall.end.x - wall.start.x;
+                double C1 = wall.start.x * wall.end.y - wall.end.x * wall.start.y;
+
+                Coordinate sensorPos = {
+                    pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
+                    pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
+                };
+
+                double A2 = - std::tan(tempAngle * M_PI / 180.0);
+                double B2 = 1;
+                double C2 = sensorPos.y - std::tan(tempAngle * M_PI / 180.0) * sensorPos.x;
+
+                double det = A1 * B2 - A2 * B1;
+                if (std::abs(det) < 1e-6) continue; // Lines are parallel, skip
+
+                double x = (B1 * C2 - B2 * C1) / det;
+                double y = (C1 * A2 - C2 * A1) / det;
+                if (casts.rightSensor.second == 0 || std::hypot(x - sensorPos.x, y - sensorPos.y) < casts.rightSensor.second) {
+                    casts.rightSensor = {wall.direction, std::hypot(x - sensorPos.x, y - sensorPos.y)};
+                }
+            }
+
+            tempAngle = pose.angle - 90;
+            Coordinate sensorPos = {
+                    pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
+                    pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
+                };
+            for (auto& wall : this->walls) {
+                double A1 = wall.start.y - wall.end.y;
+                double B1 = wall.end.x - wall.start.x;
+                double C1 = wall.start.x * wall.end.y - wall.end.x * wall.start.y;
+
+                Coordinate sensorPos = {
+                    pose.pos.x + std::cos(tempAngle * M_PI / 180.0) * usage.Xoffset,
+                    pose.pos.y + std::sin(tempAngle * M_PI / 180.0) * usage.Yoffset
+                };
+
+                double A2 = - std::tan(tempAngle * M_PI / 180.0);
+                double B2 = 1;
+                double C2 = sensorPos.y - std::tan(tempAngle * M_PI / 180.0) * sensorPos.x;
+
+                double det = A1 * B2 - A2 * B1;
+                if (std::abs(det) < 1e-6) continue; // Lines are parallel, skip
+
+                double x = (B1 * C2 - B2 * C1) / det;
+                double y = (C1 * A2 - C2 * A1) / det;
+                if (casts.leftSensor.second == 0 || std::hypot(x - sensorPos.x, y - sensorPos.y) < casts.leftSensor.second) {
+                    casts.leftSensor = {wall.direction, std::hypot(x - sensorPos.x, y - sensorPos.y)};
+                }
+            }
+
+            if (casts.frontSensor.second != 0) {
+                // Calculate new pose based on front sensor
+                if (casts.frontSensor.first == FRONT || casts.frontSensor.first == BACK) {
+                    pose.pos.y = (casts.frontSensor.first == FRONT ? 72 : -72) - avgReadings.front * std::sin(pose.angle * M_PI / 180.0);
+                    pose.pos.y -= usage.Yoffset * std::sin(pose.angle * M_PI / 180.0);
+                } else {
+                    pose.pos.x = (casts.frontSensor.first == RIGHT ? 72 : -72) - avgReadings.front * std::cos(pose.angle * M_PI / 180.0);
+                    pose.pos.x -= usage.Xoffset * std::cos(pose.angle * M_PI / 180.0);
+                }
+            }
+            if (casts.backSensor.second != 0 && casts.backSensor.second < casts.frontSensor.second) {
+                // Calculate new pose based on back sensor
+                if (casts.backSensor.first == FRONT || casts.backSensor.first == BACK) {
+                    pose.pos.y = (casts.backSensor.first == FRONT ? 72 : -72) - avgReadings.back * std::sin(pose.angle * M_PI / 180.0);
+                    pose.pos.y -= usage.Yoffset * std::sin(pose.angle * M_PI / 180.0);
+                } else {
+                    pose.pos.x = (casts.backSensor.first == RIGHT ? 72 : -72) - avgReadings.back * std::cos(pose.angle * M_PI / 180.0);
+                    pose.pos.x -= usage.Xoffset * std::cos(pose.angle * M_PI / 180.0);
+                }
+            }
+            if (casts.rightSensor.second != 0) {
+                // Calculate new pose based on right sensor
+                if (casts.rightSensor.first == FRONT || casts.rightSensor.first == BACK) {
+                    pose.pos.y = (casts.rightSensor.first == FRONT ? 72 : -72) - avgReadings.right * std::sin(pose.angle * M_PI / 180.0);
+                    pose.pos.y -= usage.Yoffset * std::sin(pose.angle * M_PI / 180.0);
+                } else {
+                    pose.pos.x = (casts.rightSensor.first == RIGHT ? 72 : -72) - avgReadings.right * std::cos(pose.angle * M_PI / 180.0);
+                    pose.pos.x -= usage.Xoffset * std::cos(pose.angle * M_PI / 180.0);
+                }
+            }
+            if (casts.leftSensor.second != 0 && casts.leftSensor.second < casts.rightSensor.second){
+                // Calculate new pose based on left sensor
+                if (casts.leftSensor.first == FRONT || casts.leftSensor.first == BACK) {
+                    pose.pos.y = (casts.leftSensor.first == FRONT ? 72 : -72) - avgReadings.left * std::sin(pose.angle * M_PI / 180.0);
+                    pose.pos.y -= usage.Yoffset * std::sin(pose.angle * M_PI / 180.0);
+                } else {
+                    pose.pos.x = (casts.leftSensor.first == RIGHT ? 72 : -72) - avgReadings.left * std::cos(pose.angle * M_PI / 180.0);
+                    pose.pos.x -= usage.Xoffset * std::cos(pose.angle * M_PI / 180.0);
+                }
+            }
             return pose;
         }
         Pose staticUpdate(int samples, Pose currentPos, DistanceConfig usage) {
@@ -63,10 +255,10 @@ class RCL {
 
 
             for (int i = 0; i < samples; i++) {
-                if (usage.x == FRONT || usage.y == FRONT) avgReadings.front += this->sensors.front->get();
-                if (usage.x == BACK  || usage.y == BACK)  avgReadings.back  += this->sensors.back->get();
-                if (usage.x == LEFT  || usage.y == LEFT)  avgReadings.left  += this->sensors.left->get();
-                if (usage.x == RIGHT || usage.y == RIGHT) avgReadings.right += this->sensors.right->get();
+                if (usage.xUsing == FRONT || usage.yUsing == FRONT) avgReadings.front += this->sensors.front->get();
+                if (usage.xUsing == BACK  || usage.yUsing == BACK)  avgReadings.back  += this->sensors.back->get();
+                if (usage.xUsing == LEFT  || usage.yUsing == LEFT)  avgReadings.left  += this->sensors.left->get();
+                if (usage.xUsing == RIGHT || usage.yUsing == RIGHT) avgReadings.right += this->sensors.right->get();
                 newPose.angle += this->sensors.imu->get_heading();
             }
 
@@ -87,33 +279,33 @@ class RCL {
             };
 
 
-            if (usage.x == FRONT)      newPose.pos.x = getTrueDist(newPose.angle, avgReadings.front);
-            else if (usage.x == BACK)  newPose.pos.x = getTrueDist(newPose.angle + 180, avgReadings.back);
-            else if (usage.x == RIGHT) newPose.pos.x = getTrueDist(newPose.angle + 90, avgReadings.right);
-            else if (usage.x == LEFT)  newPose.pos.x = getTrueDist(newPose.angle - 90, avgReadings.left);
+            if (usage.xUsing == FRONT)      newPose.pos.x = getTrueDist(newPose.angle, avgReadings.front);
+            else if (usage.xUsing == BACK)  newPose.pos.x = getTrueDist(newPose.angle + 180, avgReadings.back);
+            else if (usage.xUsing == RIGHT) newPose.pos.x = getTrueDist(newPose.angle + 90, avgReadings.right);
+            else if (usage.xUsing == LEFT)  newPose.pos.x = getTrueDist(newPose.angle - 90, avgReadings.left);
 
-            if (usage.y == FRONT)      newPose.pos.y = getTrueDist(newPose.angle, avgReadings.front);
-            else if (usage.y == BACK)  newPose.pos.y = getTrueDist(newPose.angle + 180, avgReadings.back);
-            else if (usage.y == RIGHT) newPose.pos.y = getTrueDist(newPose.angle + 90, avgReadings.right);
-            else if (usage.y == LEFT)  newPose.pos.y = getTrueDist(newPose.angle - 90, avgReadings.left);
+            if (usage.yUsing == FRONT)      newPose.pos.y = getTrueDist(newPose.angle, avgReadings.front);
+            else if (usage.yUsing == BACK)  newPose.pos.y = getTrueDist(newPose.angle + 180, avgReadings.back);
+            else if (usage.yUsing == RIGHT) newPose.pos.y = getTrueDist(newPose.angle + 90, avgReadings.right);
+            else if (usage.yUsing == LEFT)  newPose.pos.y = getTrueDist(newPose.angle - 90, avgReadings.left);
             //Now we have the distance from the wall, we need to apply the offset, and convert to inches, and apply + or -
-            if(usage.x != NONE){
+            if(usage.xUsing != NONE){
                 newPose.pos.x += usage.Xoffset;
                 newPose.pos.x *= 0.0393701; // Convert from mm to inches
             }
-            if(usage.y != NONE){
+            if(usage.yUsing != NONE){
                 newPose.pos.y += usage.Yoffset;
                 newPose.pos.y *= 0.0393701; // Convert from mm to inches
             }
 
             Pose AdjustedPose = newPose;
-            if (usage.y != NONE){
-                if (std::fmod(((std::round(((newPose.angle)+usage.y)/90)) + 180), 360) - 180 == static_cast<int>(FRONT)){
+            if (usage.yUsing != NONE){
+                if (std::fmod(((std::round(((newPose.angle)+usage.yUsing)/90)) + 180), 360) - 180 == static_cast<int>(FRONT)){
                 AdjustedPose.pos.y = -newPose.pos.y;
                 }
             }
-            if(usage.x != NONE){
-                if (std::fmod(((std::round(((newPose.angle)+usage.x)/90)) + 180), 360) - 180 == static_cast<int>(RIGHT)){
+            if(usage.xUsing != NONE){
+                if (std::fmod(((std::round(((newPose.angle)+usage.xUsing)/90)) + 180), 360) - 180 == static_cast<int>(RIGHT)){
                     AdjustedPose.pos.x = -newPose.pos.x;
                 }
             }
